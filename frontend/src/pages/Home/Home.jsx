@@ -5,22 +5,32 @@ import { useNavigate } from "react-router-dom";
 export default function Home() {
   const [videos, setVideos] = useState([]);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
   async function fetchVideoList() {
     setPending(true);
+    setError("");
 
-    const response = await axios.get("http://localhost:8000/api/v1/video?page=1&limit=10");
-    const result = await response.data;
+    try {
+      const response = await axios.get("http://localhost:8000/api/v1/video?page=1&limit=10", {
+        withCredentials: true,
+      });
+      const result = response.data;
 
-    if (result?.data?.videos?.length > 0) {
-      setVideos(result.data.videos);
-    } else {
+      if (result?.data?.videos?.length > 0) {
+        setVideos(result.data.videos);
+      } else {
+        setVideos([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch videos:", err);
+      setError("Failed to load videos. Make sure backend is running.");
       setVideos([]);
+    } finally {
+      setPending(false);
     }
-
-    setPending(false);
   }
 
   useEffect(() => {

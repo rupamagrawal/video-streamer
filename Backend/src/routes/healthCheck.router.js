@@ -4,7 +4,7 @@ import { Router } from "express";
 
 const router = Router();
 
-router.use(verifyJWT)
+// Health check should be public - no authentication required
 router.route("/").get(healthCheck)
 
 export default router;

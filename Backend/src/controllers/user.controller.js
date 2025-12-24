@@ -206,27 +206,29 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: false,
-      sameSite: "lax"
+      sameSite: "lax",
     };
 
-    const { accessToken, newRefreshToken } =
+    // FIXED HERE
+    const { accessToken, refreshToken: newRefreshToken } =
       await generateAccessAndRefreshToken(user._id);
 
     return res
       .status(200)
       .cookie("accessToken", accessToken, options)
-      .cookie("RefreshToken", newRefreshToken, options)
+      .cookie("refreshToken", newRefreshToken, options) // FIXED
       .json(
         new ApiResponse(
           200,
           { accessToken, refreshToken: newRefreshToken },
-          "Access Toekn Refreshed Successfully!"
+          "Access Token Refreshed Successfully!"
         )
       );
   } catch (error) {
     throw new ApiError(401, error?.message || "Invalid Refresh Token");
   }
 });
+
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;

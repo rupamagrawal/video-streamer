@@ -3,10 +3,15 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 const app = express();
+
+// Enhanced CORS configuration
 app.use(
   cors({
-    origin:process.env.CORS_ORIGIN,
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,
   })
 );
 
@@ -27,6 +32,8 @@ import subscriptionRouter from "./routes/subscription.router.js";
 import tweetRouter from "./routes/tweet.router.js";
 
 //route declaration
+console.log("User routes loaded");
+
 app.use("/api/v1/users", userRouter);
 //  http://localhost:8000/api/v1/users/regiter
 app.use("/api/v1/dashboard", dashboardRouter);

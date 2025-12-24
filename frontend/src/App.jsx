@@ -7,6 +7,7 @@ import Upload from "./pages/upload/Upload";
 import Navbar from "./components/navbar/navbar";
 import Login from "./pages/login/login";
 import Register from "./pages/register/Register";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 
 function App() {
   return (
@@ -15,9 +16,16 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/watch/:id" element={<Watch />} />
-        <Route path="/upload" element={<Upload />} />
-        <Route path="/login" element={<Login/>}/>
-        <Route path="/register" element={<Register/>}/>
+        <Route
+          path="/upload"
+          element={
+            <ProtectedRoute>
+              <Upload />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
     </div>
   );

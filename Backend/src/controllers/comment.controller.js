@@ -59,9 +59,9 @@ const getVideoComments = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (!comments || comments.length === 0) {
-    throw new ApiError(404, "No Comments Found for this video!");
-  }
+  // if (!comments || comments.length === 0) {
+  //   throw new ApiError(404, "No Comments Found for this video!");
+  // }
 
   return res
     .status(200)
