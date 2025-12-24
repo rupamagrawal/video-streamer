@@ -5,8 +5,10 @@ import Home from "./pages/Home/Home";
 import Watch from "./pages/watch/Watch";
 import Upload from "./pages/upload/Upload";
 import Navbar from "./components/navbar/navbar";
-import Login from "./pages/login/login";
+import Login from "./pages/login/Login.jsx";
 import Register from "./pages/register/Register";
+import Channel from "./pages/Channel/Channel";
+import EditVideo from "./pages/EditVideo/EditVideo";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 
 function App() {
@@ -16,11 +18,20 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/watch/:id" element={<Watch />} />
+        <Route path="/channel/:username" element={<Channel />} />
         <Route
           path="/upload"
           element={
             <ProtectedRoute>
               <Upload />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit-video/:videoId"
+          element={
+            <ProtectedRoute>
+              <EditVideo />
             </ProtectedRoute>
           }
         />

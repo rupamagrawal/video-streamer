@@ -3,12 +3,12 @@ import axios from "axios";
 import React from "react";
 
 // Create axios instance with base configuration
-const axiosInstance = axios.create({
+export const axiosInstance = axios.create({
   baseURL: "http://localhost:8000/api/v1",
   withCredentials: true,
 });
 
-// Added response interceptor for token refresh
+// Add response interceptor for token refresh
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -19,15 +19,24 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
+        // Check if refresh token exists in cookies before attempting refresh
+        const cookies = document.cookie.split(';').map(c => c.trim());
+        const hasRefreshToken = cookies.some(c => c.startsWith('refreshToken='));
+        
+        if (!hasRefreshToken) {
+          // No refresh token available, can't proceed
+          console.log("No refresh token available, user must login");
+          return Promise.reject(error);
+        }
+
         // Attempt to refresh the token
         const refreshRes = await axiosInstance.post("/users/refresh-token", {});
 
         // If refresh successful, retry the original request
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - login again
-        console.error("Token refresh failed:", refreshError);
-        // dispatch a logout action here if needed
+        // Refresh failed - user needs to login again
+        console.error("Token refresh failed, please login again");
         return Promise.reject(refreshError);
       }
     }

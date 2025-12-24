@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth, axiosInstance } from "../../context/AuthContext";
+import LikeButton from "../../components/LikeButton/LikeButton";
+import SubscribeButton from "../../components/SubscribeButton/SubscribeButton";
+import VideoActions from "../../components/VideoActions/VideoActions";
 
 export default function Watch() {
   const [video, setVideo] = useState(null);
@@ -9,52 +12,64 @@ export default function Watch() {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   async function getVideobyId() {
     setPending(true);
 
-    const response = await axios.get(
-      `http://localhost:8000/api/v1/video/${id}`
-    );
-    const result = await response.data;
+    try {
+      const response = await axiosInstance.get(
+        `/video/${id}`
+      );
+      const result = response.data;
 
-    if (result && result.data) {
-      setVideo(result.data);
-    } else {
+      if (result && result.data) {
+        setVideo(result.data);
+      } else {
+        setVideo(null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch video:", error);
       setVideo(null);
+    } finally {
+      setPending(false);
     }
-    setPending(false);
   }
 
   async function fetchComments() {
     try {
-      const res = await axios.get(
-        `http://localhost:8000/api/v1/comment/${id}`,
-        { withCredentials: true }
+      const res = await axiosInstance.get(
+        `/comment/${id}`
       );
 
       setComments(res.data.data || []);
     } catch (error) {
-      console.log(error);
+      console.log("Failed to fetch comments:", error);
     }
   }
 
   async function handlePostComment() {
     if (!commentText.trim()) return;
 
+    if (!user) {
+      alert("Please login to comment");
+      return;
+    }
+
     try {
       setCommentLoading(true);
 
-      await axios.post(
-        `http://localhost:8000/api/v1/comment/${id}`,
-        { content: commentText },
-        { withCredentials: true }
+      await axiosInstance.post(
+        `/comment/${id}`,
+        { content: commentText }
       );
 
       setCommentText("");
       fetchComments();
     } catch (error) {
-      console.log(error);
+      console.log("Failed to post comment:", error);
+      alert("Failed to post comment");
     } finally {
       setCommentLoading(false);
     }
@@ -63,7 +78,7 @@ export default function Watch() {
   useEffect(() => {
     getVideobyId();
     fetchComments();
-  }, []);
+  }, [id]);
 
   if (pending) return <h1 className="text-white p-6">Loading...</h1>;
 
@@ -79,28 +94,62 @@ export default function Watch() {
           src={video.videoFile}
         />
 
-        {/* Title */}
-        <h1 className="text-2xl font-bold mt-4">{video.title}</h1>
-
-        {/* Views + Date */}
-        <p className="text-gray-400 text-sm mt-1">
-          {video.views} views • {new Date(video.createdAt).toLocaleDateString()}
-        </p>
-
-        {/* Owner Section */}
-        <div className="flex items-center gap-3 mt-4">
-          <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
-
+        {/* Title with Actions */}
+        <div className="flex justify-between items-start mt-4">
           <div>
-            <p className="font-semibold">{video.ownerDetails?.username}</p>
-            <p className="text-gray-400 text-sm">{video.ownerDetails?.email}</p>
+            <h1 className="text-2xl font-bold">{video.title}</h1>
+
+            {/* Views + Date */}
+            <p className="text-gray-400 text-sm mt-1">
+              {video.views} views • {new Date(video.createdAt).toLocaleDateString()}
+            </p>
           </div>
+          
+          {/* Video Actions Menu */}
+          <VideoActions 
+            videoId={id} 
+            ownerId={video.ownerDetails?._id}
+            onDelete={() => navigate("/")}
+          />
+        </div>
+
+        {/* Owner Section with Subscribe */}
+        <div className="flex items-center justify-between mt-6 p-4 bg-gray-900 rounded-lg">
+          <div className="flex items-center gap-3">
+            <img
+              src={video.ownerDetails?.avatar || "https://via.placeholder.com/40"}
+              alt="avatar"
+              className="w-12 h-12 rounded-full object-cover"
+            />
+
+            <div
+              onClick={() =>
+                navigate(`/channel/${video.ownerDetails?.username}`)
+              }
+              className="cursor-pointer hover:opacity-80"
+            >
+              <p className="font-semibold">{video.ownerDetails?.username}</p>
+              <p className="text-gray-400 text-sm">{video.ownerDetails?.email}</p>
+            </div>
+          </div>
+
+          {user?._id !== video.ownerDetails?._id && (
+            <SubscribeButton 
+              channelId={video.ownerDetails?._id}
+              onSubscribeChange={fetchComments}
+            />
+          )}
         </div>
 
         {/* Description */}
         <p className="text-gray-300 mt-4 leading-relaxed">
           {video.description}
         </p>
+
+        {/* Actions (Like Button) */}
+        <div className="flex gap-4 mt-6 pb-6 border-b border-gray-700">
+          <LikeButton videoId={id} />
+        </div>
 
         {/* Comments Section */}
         <div className="mt-10">
@@ -144,6 +193,12 @@ export default function Watch() {
                     <p className="text-gray-500 text-sm">
                       {new Date(comment.createdAt).toLocaleString()}
                     </p>
+                    {/* Like comment button */}
+                    <div className="mt-2">
+                      <LikeButton 
+                        commentId={comment._id}
+                      />
+                    </div>
                   </div>
                 </div>
               ))

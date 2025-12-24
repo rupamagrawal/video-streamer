@@ -26,8 +26,9 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     video: videoId,
     likedBy: req.user?._id,
   });
-
-  return res.status(200).json(new ApiResponse(200, {}, "Video Liked!"));
+  
+  const totalLikes = await Like.countDocuments({ video: videoId });
+  return res.status(200).json(new ApiResponse(200, { totalLikes }, "Video Liked!"));
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
