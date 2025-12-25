@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, axiosInstance } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Channel() {
   const { username } = useParams();
@@ -12,6 +12,7 @@ export default function Channel() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const baseURL = "http://localhost:8000/api/v1";
 
@@ -22,13 +23,12 @@ export default function Channel() {
   const fetchChannelProfile = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${baseURL}/users/c/${username}`, {
-        withCredentials: true,
-      });
+      const res = await axiosInstance.get(`/users/c/${username}`);
       const channelData = res.data.data;
       setChannel(channelData);
       setSubscribers(channelData.subscribersCount || 0);
       setVideos(channelData.videos || []);
+      setIsSubscribed(!!channelData.isSubscribed);
     } catch (err) {
       setError("Failed to load channel");
       console.error(err);
@@ -124,6 +124,7 @@ export default function Channel() {
               <div
                 key={video._id}
                 className="bg-gray-900 rounded-lg overflow-hidden hover:scale-105 transition-transform cursor-pointer"
+                onClick={() => navigate(`/watch/${video._id}`)}
               >
                 <img
                   src={video.thumbnail}

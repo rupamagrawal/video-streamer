@@ -98,7 +98,8 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video ID is required!");
   }
 
-  const video = await Video.aggregate([
+  // Build aggregation pipeline so we can optionally include current user's like
+  const pipeline = [
     {
       $match: { _id: new mongoose.Types.ObjectId(videoId) },
     },
@@ -110,9 +111,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         as: "ownerDetails",
       },
     },
-    {
-      $unwind: "$ownerDetails",
-    },
+    { $unwind: "$ownerDetails" },
     {
       $project: {
         title: 1,
@@ -129,7 +128,52 @@ const getVideoById = asyncHandler(async (req, res) => {
         "ownerDetails.avatar": 1,
       },
     },
-  ]);
+    // lookup likes for this video to compute totalLikes
+    {
+      $lookup: {
+        from: "likes",
+        let: { vid: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$video", "$$vid"] } } },
+          { $project: { likedBy: 1 } },
+        ],
+        as: "likes",
+      },
+    },
+  ];
+
+  // If we have a logged-in user, add a lookup to check if they liked this video
+  if (req.user && req.user._id) {
+    pipeline.push({
+      $lookup: {
+        from: "likes",
+        let: { vid: "$_id", uid: new mongoose.Types.ObjectId(req.user._id) },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$video", "$$vid"] },
+                  { $eq: ["$likedBy", "$$uid"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "userLike",
+      },
+    });
+  }
+
+  // Add computed fields
+  pipeline.push({
+    $addFields: {
+      totalLikes: { $size: "$likes" },
+      isLiked: { $gt: [{ $size: { $ifNull: ["$userLike", []] } }, 0] },
+    },
+  });
+
+  const video = await Video.aggregate(pipeline);
 
   if (!video.length) {
     throw new ApiError(404, "No Video exist with this id!");

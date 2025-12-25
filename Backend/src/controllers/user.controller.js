@@ -399,6 +399,27 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         email: 1,
       },
     },
+    // Lookup videos posted by this channel
+    {
+      $lookup: {
+        from: "videos",
+        localField: "_id",
+        foreignField: "owner",
+        as: "videos",
+        pipeline: [
+          {
+            $project: {
+              title: 1,
+              thumbnail: 1,
+              views: 1,
+              createdAt: 1,
+              owner: 1,
+            },
+          },
+          { $sort: { createdAt: -1 } },
+        ],
+      },
+    },
   ]);
 
   if (!channel?.length) {

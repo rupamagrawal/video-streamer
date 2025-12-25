@@ -148,7 +148,7 @@ export default function Watch() {
 
         {/* Actions (Like Button) */}
         <div className="flex gap-4 mt-6 pb-6 border-b border-gray-700">
-          <LikeButton videoId={id} />
+          <LikeButton videoId={id} initialIsLiked={video.isLiked} initialLikeCount={video.totalLikes} />
         </div>
 
         {/* Comments Section */}
@@ -164,7 +164,7 @@ export default function Watch() {
             <textarea
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              className="flex-grow bg-gray-800 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="grow bg-gray-800 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Add a comment..."
               rows="2"
             />
@@ -197,6 +197,8 @@ export default function Watch() {
                     <div className="mt-2">
                       <LikeButton 
                         commentId={comment._id}
+                        initialIsLiked={comment.isLiked}
+                        initialLikeCount={comment.totalCommentLike}
                       />
                     </div>
                   </div>
