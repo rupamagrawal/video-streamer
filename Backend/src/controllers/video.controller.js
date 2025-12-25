@@ -97,7 +97,20 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const totalVideos = countResult.length > 0 ? countResult[0].total : 0;
 
   if (videos.length === 0) {
-    return res.status(200).json(new ApiResponse(200, { videos: [], totalVideos: 0, currentPage: pageNumber, totalPages: 0 }, "No Videos Found!"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            videos: [],
+            totalVideos: 0,
+            currentPage: pageNumber,
+            totalPages: 0,
+          },
+          "No Videos Found!"
+        )
+      );
   }
 
   return res.status(200).json(
@@ -140,8 +153,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
   }
 
   const video = await Video.create({
-    videoFile: videoUpload.url,
-    thumbnail: thumbnailUpload.url,
+    videoFile: videoUpload.secure_url,
+    thumbnail: thumbnailUpload.secure_url,
     title,
     description,
     duration: videoUpload.duration || 0,
@@ -284,7 +297,8 @@ const updateVideo = asyncHandler(async (req, res) => {
         await deleteFromCloudinary(oldThumbnail);
       }
     }
-    video.thumbnail = thumbnailUpload.url;
+    video.thumbnail = thumbnailUpload.secure_url;
+
   }
 
   await video.save();
