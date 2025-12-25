@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, axiosInstance } from "../../context/AuthContext";
 
 export default function EditVideo() {
   const { videoId } = useParams();
@@ -18,7 +17,7 @@ export default function EditVideo() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const baseURL = "http://localhost:8000/api/v1";
+  
 
   useEffect(() => {
     fetchVideoDetails();
@@ -26,9 +25,7 @@ export default function EditVideo() {
 
   const fetchVideoDetails = async () => {
     try {
-      const res = await axios.get(`${baseURL}/video/${videoId}`, {
-        withCredentials: true,
-      });
+      const res = await axiosInstance.get(`/video/${videoId}`);
       const video = res.data.data;
 
       // Check if user is the owner
@@ -87,9 +84,8 @@ export default function EditVideo() {
         form.append("thumbnail", thumbnail);
       }
 
-      await axios.patch(`${baseURL}/video/${videoId}`, form, {
+      await axiosInstance.patch(`/video/${videoId}`, form, {
         headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
       });
 
       alert("Video updated successfully");
