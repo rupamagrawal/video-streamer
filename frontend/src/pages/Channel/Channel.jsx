@@ -14,8 +14,6 @@ export default function Channel() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const baseURL = "http://localhost:8000/api/v1";
-
   useEffect(() => {
     fetchChannelProfile();
   }, [username]);
@@ -44,10 +42,9 @@ export default function Channel() {
     }
 
     try {
-      const res = await axios.post(
-        `${baseURL}/subscription/c/${channel._id}`,
-        {},
-        { withCredentials: true }
+      const res = await axiosInstance.post(
+        `/subscription/c/${channel._id}`,
+        {}
       );
 
       if (res.data.data?.message?.includes("Subscribed")) {
@@ -63,7 +60,13 @@ export default function Channel() {
     }
   };
 
-  if (loading) return <div className="text-white text-center py-10">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex justify-center items-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
   if (error) return <div className="text-red-500 text-center py-10">{error}</div>;
   if (!channel) return <div className="text-white text-center py-10">Channel not found</div>;
 

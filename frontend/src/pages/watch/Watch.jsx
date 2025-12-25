@@ -80,7 +80,13 @@ export default function Watch() {
     fetchComments();
   }, [id]);
 
-  if (pending) return <h1 className="text-white p-6">Loading...</h1>;
+  if (pending) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex justify-center items-center p-6">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (!video) return <h1 className="text-white p-6">Video Not Found!</h1>;
 

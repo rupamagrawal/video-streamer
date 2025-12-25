@@ -11,31 +11,93 @@ import {
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  //TODO: get all videos based on query, sort, pagination
 
   // Convert pagination values to numbers (important)
   const pageNumber = Number(page) || 1;
   const limitNumber = Number(limit) || 10;
+  const skip = (pageNumber - 1) * limitNumber;
 
-  // Build dynamic filter object
-  const filter = {};
-  if (query) {
-    filter.title = { $regex: query, $options: "i" };
-  }
-  if (userId) {
-    filter.owner = userId;
-  }
+  // Build aggregation pipeline
+  const pipeline = [
+    // Match stage - filter by query and userId
+    {
+      $match: {
+        ...(query && { title: { $regex: query, $options: "i" } }),
+        ...(userId && { owner: new mongoose.Types.ObjectId(userId) }),
+        isPublished: true,
+      },
+    },
+    // Lookup owner details
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+      },
+    },
+    // Unwind owner details
+    {
+      $unwind: "$ownerDetails",
+    },
+    // Lookup likes
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    // Add computed fields
+    {
+      $addFields: {
+        totalLikes: { $size: "$likes" },
+      },
+    },
+    // Sort
+    {
+      $sort: {
+        [sortBy || "createdAt"]: sortType === "desc" ? -1 : 1,
+      },
+    },
+    // Skip and limit for pagination
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limitNumber,
+    },
+    // Project fields
+    {
+      $project: {
+        likes: 0, // Don't return the likes array
+      },
+    },
+  ];
 
-  // Fetch videos with filter, sorting, and pagination
-  const videos = await Video.find(filter)
-    .sort({ [sortBy || "createdAt"]: sortType === "desc" ? -1 : 1 })
-    .skip((pageNumber - 1) * limitNumber)
-    .limit(limitNumber);
+  // Execute aggregation
+  const videos = await Video.aggregate(pipeline);
 
-  const totalVideos = await Video.countDocuments(filter);
+  // Get total count for pagination
+  const countPipeline = [
+    {
+      $match: {
+        ...(query && { title: { $regex: query, $options: "i" } }),
+        ...(userId && { owner: new mongoose.Types.ObjectId(userId) }),
+        isPublished: true,
+      },
+    },
+    {
+      $count: "total",
+    },
+  ];
+
+  const countResult = await Video.aggregate(countPipeline);
+  const totalVideos = countResult.length > 0 ? countResult[0].total : 0;
 
   if (videos.length === 0) {
-    return res.status(200).json(new ApiResponse(200, [], "No Videos Found!"));
+    return res.status(200).json(new ApiResponse(200, { videos: [], totalVideos: 0, currentPage: pageNumber, totalPages: 0 }, "No Videos Found!"));
   }
 
   return res.status(200).json(

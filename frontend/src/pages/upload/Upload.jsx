@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { axiosInstance } from "../../context/AuthContext";
+import { getValidationError } from "../../utils/validation";
 
 export default function Upload() {
   const [title, setTitle] = useState("");
@@ -7,18 +9,63 @@ export default function Upload() {
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbPreview, setThumbPreview] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleFieldChange = (field, value) => {
+    if (field === "title") setTitle(value);
+    if (field === "description") setDescription(value);
+    
+    if (value && errors[field]) {
+      setErrors({ ...errors, [field]: "" });
+    }
+  };
+
+  const validateFields = () => {
+    const newErrors = {};
+
+    if (!title.trim()) {
+      newErrors.title = "Title is required";
+    } else if (title.length < 3) {
+      newErrors.title = "Title must be at least 3 characters";
+    } else if (title.length > 100) {
+      newErrors.title = "Title must be less than 100 characters";
+    }
+
+    if (!description.trim()) {
+      newErrors.description = "Description is required";
+    } else if (description.length < 10) {
+      newErrors.description = "Description must be at least 10 characters";
+    }
+
+    if (!videoFile) {
+      newErrors.videoFile = "Video file is required";
+    }
+
+    if (!thumbnail) {
+      newErrors.thumbnail = "Thumbnail is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleThumbnail = (e) => {
     const file = e.target.files[0];
     setThumbnail(file);
     setThumbPreview(URL.createObjectURL(file));
+    if (errors.thumbnail) {
+      setErrors({ ...errors, thumbnail: "" });
+    }
   };
 
   const handleUpload = async () => {
-    if (!title || !description || !videoFile || !thumbnail) {
-      return alert("All fields are required!");
+    if (!validateFields()) {
+      return;
     }
 
+    setIsLoading(true);
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
@@ -26,17 +73,24 @@ export default function Upload() {
     formData.append("thumbnail", thumbnail);
 
     try {
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/video",
+      const res = await axiosInstance.post(
+        "/video",
         formData,
-        { withCredentials: true }
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       alert("Video uploaded successfully!");
-      console.log(res.data);
+      navigate("/");
     } catch (error) {
-      alert("Upload failed");
+      const errorMsg = error.response?.data?.message || "Upload failed";
+      setErrors({ general: errorMsg });
       console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -46,26 +100,36 @@ export default function Upload() {
 
         <h1 className="text-3xl font-semibold mb-6">Upload a New Video</h1>
 
+        {errors.general && (
+          <p className="text-red-400 text-sm mb-4">{errors.general}</p>
+        )}
+
         {/* Title */}
         <input
-          className="w-full p-3 mb-4 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
+          className="w-full p-3 mb-1 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
           type="text"
           placeholder="Video Title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => handleFieldChange("title", e.target.value)}
         />
+        {errors.title && (
+          <p className="text-red-400 text-sm mb-3">{errors.title}</p>
+        )}
 
         {/* Description */}
         <textarea
-          className="w-full p-3 mb-6 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
+          className="w-full p-3 mb-1 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500"
           placeholder="Video Description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => handleFieldChange("description", e.target.value)}
           rows="3"
         />
+        {errors.description && (
+          <p className="text-red-400 text-sm mb-3">{errors.description}</p>
+        )}
 
         {/* Video Upload Box */}
-        <label className="block mb-6">
+        <label className="block mb-1">
           <span className="font-medium">Upload Video File</span>
 
           <div className="mt-2 bg-gray-800 border border-gray-700 rounded-lg p-4 text-gray-300 cursor-pointer hover:bg-gray-700 transition-all"
@@ -81,13 +145,21 @@ export default function Upload() {
             id="videoInput"
             type="file"
             accept="video/*"
-            onChange={(e) => setVideoFile(e.target.files[0])}
+            onChange={(e) => {
+              setVideoFile(e.target.files[0]);
+              if (e.target.files[0] && errors.videoFile) {
+                setErrors({ ...errors, videoFile: "" });
+              }
+            }}
             className="hidden"
           />
         </label>
+        {errors.videoFile && (
+          <p className="text-red-400 text-sm mb-3">{errors.videoFile}</p>
+        )}
 
         {/* Thumbnail Upload */}
-        <label className="block mb-6">
+        <label className="block mb-1">
           <span className="font-medium">Upload Thumbnail</span>
 
           <div
@@ -109,6 +181,9 @@ export default function Upload() {
             className="hidden"
           />
         </label>
+        {errors.thumbnail && (
+          <p className="text-red-400 text-sm mb-3">{errors.thumbnail}</p>
+        )}
 
         {/* Thumbnail Preview */}
         {thumbPreview && (
@@ -122,9 +197,10 @@ export default function Upload() {
         {/* Upload button */}
         <button
           onClick={handleUpload}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-lg font-medium transition-all"
+          disabled={isLoading}
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white text-lg font-medium transition-all"
         >
-          Upload Video
+          {isLoading ? "Uploading..." : "Upload Video"}
         </button>
       </div>
     </div>

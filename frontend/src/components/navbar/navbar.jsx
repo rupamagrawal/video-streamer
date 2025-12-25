@@ -97,13 +97,14 @@
 // }
 
 
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const { user, loggedIn, logout, loading } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
 
   // 🔥 Prevent flicker on refresh
   if (loading || user === undefined) {
@@ -119,6 +120,14 @@ export default function Navbar() {
     );
   }
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery("");
+    }
+  };
+
   return (
     <header className="flex items-center justify-between px-8 py-4 bg-gray-900 text-gray-200 shadow-md">
 
@@ -127,24 +136,43 @@ export default function Navbar() {
         <Link to="/">VideoStream</Link>
       </h3>
 
-      {/* Center */}
-      <nav>
-        <ul className="flex gap-8 text-lg">
-          <li>
-            <Link to="/" className="hover:text-white transition">
-              Home
-            </Link>
-          </li>
-
-          {loggedIn && (
+      {/* Center - Navigation + Search */}
+      <div className="flex items-center gap-8">
+        <nav>
+          <ul className="flex gap-8 text-lg">
             <li>
-              <Link to="/upload" className="hover:text-white transition">
-                Upload
+              <Link to="/" className="hover:text-white transition">
+                Home
               </Link>
             </li>
-          )}
-        </ul>
-      </nav>
+
+            {loggedIn && (
+              <li>
+                <Link to="/upload" className="hover:text-white transition">
+                  Upload
+                </Link>
+              </li>
+            )}
+          </ul>
+        </nav>
+
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="flex">
+          <input
+            type="text"
+            placeholder="Search videos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-4 py-2 rounded-l-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-r-lg bg-blue-600 hover:bg-blue-700 text-white transition"
+          >
+            Search
+          </button>
+        </form>
+      </div>
 
       {/* Right Side */}
       <div className="flex items-center gap-4">

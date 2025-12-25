@@ -1,20 +1,55 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getValidationError } from "../../utils/validation";
 
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState("");
+  const [identifierError, setIdentifierError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   const { login: loginUser } = useAuth();
 
+  const handleIdentifierChange = (e) => {
+    const value = e.target.value;
+    setIdentifier(value);
+    if (value.trim()) {
+      setIdentifierError("");
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (value.trim()) {
+      setPasswordError("");
+    }
+  };
+
   async function handleLogin() {
     // Validation
-    if (!identifier || !password) {
-      setLocalError("Username/Email and password are required!");
+    let hasError = false;
+    
+    if (!identifier.trim()) {
+      setIdentifierError("Username or email is required");
+      hasError = true;
+    } else {
+      setIdentifierError("");
+    }
+
+    if (!password) {
+      setPasswordError("Password is required");
+      hasError = true;
+    } else {
+      setPasswordError("");
+    }
+
+    if (hasError) {
+      setLocalError("Please fix the errors above");
       return;
     }
 
@@ -23,12 +58,12 @@ export default function Login() {
 
     try {
       const credentials = {
-        username: identifier, // backend accepts username OR email
+        username: identifier,
         password: password,
       };
 
       await loginUser(credentials);
-      navigate("/"); // redirect after success
+      navigate("/");
     } catch (error) {
       const errorMsg =
         error.response?.data?.message ||
@@ -42,7 +77,7 @@ export default function Login() {
   }
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isLoading) {
       handleLogin();
     }
   };
@@ -63,21 +98,24 @@ export default function Login() {
           type="text"
           placeholder="Enter username or email"
           value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
+          onChange={handleIdentifierChange}
           onKeyPress={handleKeyPress}
           disabled={isLoading}
-          className="w-full p-3 mb-4 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+          className="w-full p-3 mb-2 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500 disabled:opacity-50"
         />
+        {identifierError && <p className="text-red-400 text-sm mb-4">{identifierError}</p>}
 
         <input
           type="password"
           placeholder="Enter password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
           onKeyPress={handleKeyPress}
           disabled={isLoading}
-          className="w-full p-3 mb-6 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+          className="w-full p-3 mb-2 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500 disabled:opacity-50"
         />
+        {passwordError && <p className="text-red-400 text-sm mb-6">{passwordError}</p>}
+        {!passwordError && <div className="mb-6"></div>}
 
         <button
           onClick={handleLogin}

@@ -9,6 +9,7 @@ import Login from "./pages/login/Login.jsx";
 import Register from "./pages/register/Register";
 import Channel from "./pages/Channel/Channel";
 import EditVideo from "./pages/EditVideo/EditVideo";
+import Search from "./pages/Search/Search";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/watch/:id" element={<Watch />} />
         <Route path="/channel/:username" element={<Channel />} />
+        <Route path="/search" element={<Search />} />
         <Route
           path="/upload"
           element={
