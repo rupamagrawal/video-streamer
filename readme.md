@@ -2,7 +2,7 @@
 
 A modern, full-stack video streaming application built with **React**, **Node.js/Express**, and **MongoDB**. Features JWT authentication, video management, user interactions (likes, comments, subscriptions), and advanced search functionality.
 
-> **Focus**: Production-ready backend architecture with scalable API design, database optimization, and cross-domain deployment patterns.
+> **Focus**: Production-ready backend architecture with scalable API design, database optimization, and real-world deployment patterns.
 
 ---
 
@@ -24,21 +24,20 @@ A modern, full-stack video streaming application built with **React**, **Node.js
 
 ### 📹 **Video Management**
 
-* **Cloudinary Integration**: High-performance video and thumbnail hosting.
+* **Cloudinary Integration**: High-performance video and thumbnail hosting via CDN.
 * **Content Control**: Publish/unpublish toggles and owner-only deletion.
-* **Analytics**: Real-time tracking of views and video duration.
+* **Metadata Management**: Edit titles, descriptions, and thumbnails after upload.
 
 ### 💬 **User Interactions**
 
 * **Engagement**: Like/unlike system for both videos and comments.
-* **Community**: Full CRUD functionality for comments.
-* **Subscriptions**: Channel-based subscription model with real-time subscriber counts.
+* **Community**: Full CRUD functionality for video comments.
+* **Subscriptions**: Channel-based follow model with real-time stats tracking.
 
 ### 🔍 **Search & Discovery**
 
-* **Global Search**: Case-insensitive title search.
-* **Performance**: Optimized MongoDB aggregation pipelines to fetch owner details and like counts in a single database hit.
-* **Pagination**: Efficient data fetching using `skip` and `limit`.
+* **Global Search**: Case-insensitive title search with pagination.
+* **Performance**: Optimized **MongoDB Aggregation Pipelines** to fetch owner details and engagement counts in a single database hit.
 
 ---
 
@@ -46,36 +45,113 @@ A modern, full-stack video streaming application built with **React**, **Node.js
 
 ### Frontend
 
-* **React 19** & **React Router 7**
-* **Tailwind CSS** (Styling)
-* **Context API** (Global state for Auth)
-* **Axios** (API communication)
+* **React 19** - UI framework
+* **React Router 7** - Client-side routing
+* **Axios** - HTTP client with custom interceptors
+* **Tailwind CSS** - Styling
+* **Context API** - Global Auth & API state management
 
 ### Backend
 
-* **Node.js** & **Express.js**
-* **MongoDB** & **Mongoose** (ODM)
-* **Multer** (File handling)
-* **Cloudinary** (Media storage)
-
-### Infrastructure
-
-* **Vercel**: Frontend hosting
-* **Render**: Backend hosting
-* **MongoDB Atlas**: Cloud database
+* **Node.js + Express.js** - REST API server
+* **MongoDB + Mongoose** - Database & ODM
+* **JWT** - Token-based authentication
+* **Multer** - File upload middleware
+* **Cloudinary** - Cloud media storage
 
 ---
 
-## 📋 API Endpoints (v1)
+## 🏗️ Architecture & Flow
 
-| Category | Endpoint | Method | Description |
-| --- | --- | --- | --- |
-| **Auth** | `/users/register` | `POST` | Create new account |
-| **Auth** | `/users/refresh-token` | `POST` | Renew access token |
-| **Videos** | `/video` | `GET` | Get all videos (Search/Pagination) |
-| **Videos** | `/video/:id` | `PATCH` | Update metadata (Owner only) |
-| **Likes** | `/likes/toggle/v/:videoId` | `POST` | Toggle video like |
-| **Subs** | `/subscription/c/:id` | `POST` | Toggle channel subscription |
+The platform follows a classic **MERN stack** architecture with a decoupled frontend and backend, utilizing cloud services for media and data storage.
+
+### **The Request Flow**
+
+1. **Frontend**: Captures user input and dispatches requests using an **Axios instance** configured with `withCredentials: true`.
+2. **Middleware Layer**:
+* **Auth Middleware**: Verifies JWTs from cookies.
+* **Multer**: Temporarily stores uploads locally before cloud transit.
+
+
+3. **Controllers**: Executes business logic (e.g., handling likes, calculating subscription status).
+4. **Data Persistence**:
+* **MongoDB Atlas**: Stores structured data (User profiles, Metadata).
+* **Cloudinary**: Acts as the Media Engine for video transcoding and delivery.
+
+
+
+### **🔄 JWT Authentication Flow**
+
+1. **Login**: User receives an **Access Token** (short-lived) and a **Refresh Token** (long-lived, `httpOnly`).
+2. **Expiry**: If the Access Token expires, the backend returns a `401 Unauthorized`.
+3. **Refresh**: The Axios interceptor catches the 401, calls the `/refresh-token` endpoint, gets a new Access Token, and retries the original request seamlessly.
+
+---
+
+## 📊 Database Schema
+
+The platform uses a relational modeling approach within MongoDB, utilizing **Mongoose Virtuals** and **Aggregation Pipelines** to handle complex relationships between collections.
+
+### **Core Collections**
+
+| Collection | Key Fields | Relationships |
+| --- | --- | --- |
+| **Users** | `username`, `email`, `password`, `avatar` | Owner of Videos, Comments, and Likes |
+| **Videos** | `videoFile`, `thumbnail`, `title`, `views` | Linked to `User` (Owner) |
+| **Comments** | `content` | Linked to `Video` and `User` (Owner) |
+| **Likes** | `likedBy` | Polymorphic: Links to `Video` OR `Comment` |
+| **Subscriptions** | `subscriber`, `channel` | Links `User` to `User` (Channel) |
+
+---
+
+## 📋 API Endpoints
+
+### Authentication
+
+* `POST /api/v1/users/register` - Create account
+* `POST /api/v1/users/login` - User login
+* `POST /api/v1/users/logout` - User logout
+* `POST /api/v1/users/refresh-token` - Refresh access token
+
+### Videos
+
+* `GET /api/v1/video` - Get all videos (Search/Pagination)
+* `GET /api/v1/video/:id` - Get specific video details
+* `POST /api/v1/video` - Upload video (Protected)
+* `PATCH /api/v1/video/:id` - Update metadata (Owner only)
+* `DELETE /api/v1/video/:id` - Delete video (Owner only)
+
+### Interactions
+
+* `POST /api/v1/likes/toggle/v/:videoId` - Toggle video like
+* `POST /api/v1/subscription/c/:channelId` - Subscribe/Unsubscribe
+
+---
+
+## 📦 Project Structure
+
+```text
+video-streamer/
+├── Backend/
+│   ├── src/
+│   │   ├── controllers/      # Business logic
+│   │   ├── models/           # Mongoose schemas
+│   │   ├── routes/           # API endpoints
+│   │   ├── middlewares/      # Auth, file upload, error handling
+│   │   ├── utils/            # Helpers, error classes
+│   │   └── app.js            # Express setup
+│   └── package.json
+│
+└── frontend/
+    ├── src/
+    │   ├── pages/            # Page components
+    │   ├── components/       # Reusable components
+    │   ├── context/          # Auth context + axios
+    │   ├── utils/            # Validation, helpers
+    │   └── App.jsx           # Routes
+    └── package.json
+
+```
 
 ---
 
@@ -89,13 +165,13 @@ cd video-streamer
 
 ```
 
-### 2. Backend Configuration
+### 2. Backend Setup
 
 ```bash
 cd Backend
 npm install
 
-# Create .env file and add:
+# Create .env file:
 PORT=8000
 MONGODB_URI=your_mongodb_uri
 ACCESS_TOKEN_SECRET=your_secret
@@ -109,7 +185,7 @@ npm run dev
 
 ```
 
-### 3. Frontend Configuration
+### 3. Frontend Setup
 
 ```bash
 cd frontend
@@ -121,65 +197,6 @@ VITE_API_BASE_URL=http://localhost:8000
 npm run dev
 
 ```
-
----
-
-## 🏗️ Architecture Highlights
-
-### JWT Token Refresh Flow
-
-1. **Access Token**: Short-lived (1 day), sent in headers/cookies.
-2. **Refresh Token**: Long-lived (10 days), stored in `httpOnly` cookie.
-3. **Interceptor**: If a request fails with 401, the frontend automatically hits the `/refresh-token` endpoint and retries the original request.
-
-### Database Schema
-
-* **Aggregations**: Used to calculate "Subscribers count" and "IsSubscribed" status dynamically during profile fetches to ensure data integrity.
-
----
-📦 Project Structure
-
-video-streamer/
-
-├── Backend/
-
-│   └── src/
-
-│       ├── controllers/
-
-│       ├── models/
-
-│       ├── routes/
-
-│       ├── middlewares/
-
-│       ├── utils/
-
-│       └── app.js
-
-│
-
-└── frontend/
-
-    └── src/
-
-        ├── pages/
-
-        ├── components/
-
-        ├── context/
-
-        ├── utils/
-
-        └── App.jsx
-
- ---     
-
-## 📚 Learning Outcomes
-
-* **Full-stack Integration**: Managing cross-origin cookies between Vercel and Render.
-* **Performance**: Reducing API latency using optimized MongoDB queries.
-* **Security**: Implementing robust middleware for protected routes and file validation.
 
 ---
 
