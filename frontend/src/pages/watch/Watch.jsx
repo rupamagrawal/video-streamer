@@ -168,7 +168,7 @@ export default function Watch() {
           {/* Add Comment Box */}
           <div className="flex gap-3">
             <img
-              src={comment.owner?.avatar || "https://via.placeholder.com/40"}
+              src={user?.avatar || "https://via.placeholder.com/40"}
               alt="avatar"
               className="w-10 h-10 rounded-full object-cover"
             />
