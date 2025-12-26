@@ -167,7 +167,11 @@ export default function Watch() {
 
           {/* Add Comment Box */}
           <div className="flex gap-3">
-            <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+            <img
+              src={comment.owner?.avatar || "https://via.placeholder.com/40"}
+              alt="avatar"
+              className="w-10 h-10 rounded-full object-cover"
+            />
 
             <textarea
               value={commentText}
