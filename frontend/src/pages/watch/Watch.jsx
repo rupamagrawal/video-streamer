@@ -19,9 +19,7 @@ export default function Watch() {
     setPending(true);
 
     try {
-      const response = await axiosInstance.get(
-        `/video/${id}`
-      );
+      const response = await axiosInstance.get(`/video/${id}`);
       const result = response.data;
 
       if (result && result.data) {
@@ -39,9 +37,7 @@ export default function Watch() {
 
   async function fetchComments() {
     try {
-      const res = await axiosInstance.get(
-        `/comment/${id}`
-      );
+      const res = await axiosInstance.get(`/comment/${id}`);
 
       setComments(res.data.data || []);
     } catch (error) {
@@ -60,10 +56,7 @@ export default function Watch() {
     try {
       setCommentLoading(true);
 
-      await axiosInstance.post(
-        `/comment/${id}`,
-        { content: commentText }
-      );
+      await axiosInstance.post(`/comment/${id}`, { content: commentText });
 
       setCommentText("");
       fetchComments();
@@ -107,13 +100,14 @@ export default function Watch() {
 
             {/* Views + Date */}
             <p className="text-gray-400 text-sm mt-1">
-              {video.views} views • {new Date(video.createdAt).toLocaleDateString()}
+              {video.views} views •{" "}
+              {new Date(video.createdAt).toLocaleDateString()}
             </p>
           </div>
-          
+
           {/* Video Actions Menu */}
-          <VideoActions 
-            videoId={id} 
+          <VideoActions
+            videoId={id}
             ownerId={video.ownerDetails?._id}
             onDelete={() => navigate("/")}
           />
@@ -123,7 +117,9 @@ export default function Watch() {
         <div className="flex items-center justify-between mt-6 p-4 bg-gray-900 rounded-lg">
           <div className="flex items-center gap-3">
             <img
-              src={video.ownerDetails?.avatar || "https://via.placeholder.com/40"}
+              src={
+                video.ownerDetails?.avatar || "https://via.placeholder.com/40"
+              }
               alt="avatar"
               className="w-12 h-12 rounded-full object-cover"
             />
@@ -135,12 +131,14 @@ export default function Watch() {
               className="cursor-pointer hover:opacity-80"
             >
               <p className="font-semibold">{video.ownerDetails?.username}</p>
-              <p className="text-gray-400 text-sm">{video.ownerDetails?.email}</p>
+              <p className="text-gray-400 text-sm">
+                {video.ownerDetails?.email}
+              </p>
             </div>
           </div>
 
           {user?._id !== video.ownerDetails?._id && (
-            <SubscribeButton 
+            <SubscribeButton
               channelId={video.ownerDetails?._id}
               onSubscribeChange={fetchComments}
             />
@@ -154,7 +152,11 @@ export default function Watch() {
 
         {/* Actions (Like Button) */}
         <div className="flex gap-4 mt-6 pb-6 border-b border-gray-700">
-          <LikeButton videoId={id} initialIsLiked={video.isLiked} initialLikeCount={video.totalLikes} />
+          <LikeButton
+            videoId={id}
+            initialIsLiked={video.isLiked}
+            initialLikeCount={video.totalLikes}
+          />
         </div>
 
         {/* Comments Section */}
@@ -189,7 +191,13 @@ export default function Watch() {
             {comments.length > 0 ? (
               comments.map((comment) => (
                 <div key={comment._id} className="flex gap-3">
-                  <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+                  <img
+                    src={
+                      comment.owner?.avatar || "https://via.placeholder.com/40"
+                    }
+                    alt="avatar"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
 
                   <div>
                     <p className="font-semibold">
@@ -201,7 +209,7 @@ export default function Watch() {
                     </p>
                     {/* Like comment button */}
                     <div className="mt-2">
-                      <LikeButton 
+                      <LikeButton
                         commentId={comment._id}
                         initialIsLiked={comment.isLiked}
                         initialLikeCount={comment.totalCommentLike}
