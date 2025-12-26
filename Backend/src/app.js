@@ -7,7 +7,7 @@ const app = express();
 // Enhanced CORS configuration
 app.use(
   cors({
-    origin: "https://video-streamer-two.vercel.app",
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
