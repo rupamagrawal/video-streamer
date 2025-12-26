@@ -20,15 +20,15 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Check if refresh token exists in cookies before attempting refresh
-        // const cookies = document.cookie.split(';').map(c => c.trim());
-        // const hasRefreshToken = cookies.some(c => c.startsWith('refreshToken='));
+        //Check if refresh token exists in cookies before attempting refresh
+        const cookies = document.cookie.split(';').map(c => c.trim());
+        const hasRefreshToken = cookies.some(c => c.startsWith('refreshToken='));
         
-        // if (!hasRefreshToken) {
-        //   // No refresh token available, can't proceed
-        //   console.log("No refresh token available, user must login");
-        //   return Promise.reject(error);
-        // }
+        if (!hasRefreshToken) {
+          // No refresh token available, can't proceed
+          console.log("No refresh token available, user must login");
+          return Promise.reject(error);
+        }
 
         // Attempt to refresh the token
         const refreshRes = await axiosInstance.post("/users/refresh-token", {});
